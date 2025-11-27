@@ -7,12 +7,13 @@ from PyQt6.QtWidgets import QApplication
 from gui.gui import MainWindow
 
 def main():
-    app = QApplication(sys.argv)
-    loop = QEventLoop(app) # initises the gui through asyncio
-    asyncio.set_event_loop(loop)
 
-    window = MainWindow(loop)
+    app = QApplication(sys.argv)
+
+    window = MainWindow()
     window.show()
+
+    app.exec()
 
 
 if __name__ == "__main__":

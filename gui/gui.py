@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHB
 
 class MainWindow(QMainWindow):
 
-    def __init__(self, loop=None):
+    def __init__(self):
         super().__init__()
         
         self.setWindowTitle("NMEA Ctrl sys")
