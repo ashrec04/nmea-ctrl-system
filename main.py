@@ -1,7 +1,4 @@
-import asyncio
-from qasync import QEventLoop
 import sys
-import os
 from PyQt6.QtWidgets import QApplication
 
 from gui.gui import MainWindow
