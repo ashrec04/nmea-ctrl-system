@@ -4,7 +4,7 @@ import re
 import signal
 import subprocess
 from pathlib import Path
-from typing import List
+from core.nmea import NEMAMessage
 
 PROJECT_DIR = Path(__file__).resolve().parent / "USB-CAN-A"
 CANUSB_BIN = PROJECT_DIR / "canusb"
@@ -19,9 +19,8 @@ def BuildCanusb() -> None:
 
 def ProcessCANFrame(frame: dict):
     value = None
-
     # get data byte recieved from frame
-    match = re.search(r':\s*(.{2})\s+', frame)
+    match = re.search(r':\s*(.{2})\s+', frame)  # uses this template to extract data byte
     if match:
         value = match.group(1)
         print(value)
@@ -39,6 +38,7 @@ async def DrainStderr(proc: asyncio.subprocess.Process) -> None:
 
 
 async def ListenCanFrames() -> None:
+    n2k = NEMAMessage()
 
     # run the canusb program command
     # ~/USB-CAN-A $ ./canusb -d /dev/ttyUSB0 -s 125000
@@ -50,10 +50,8 @@ async def ListenCanFrames() -> None:
         stderr=asyncio.subprocess.PIPE,
         cwd=PROJECT_DIR,
     )
-
     assert proc.stdout is not None
     assert proc.stderr is not None
-
     stderr_task = asyncio.create_task(DrainStderr(proc))
 
     try:
@@ -65,15 +63,14 @@ async def ListenCanFrames() -> None:
             frame = line.decode(errors="replace").strip()
             
             if frame is not None:
-                # no. bytes in each part of the message
-                can_frame_count =  4
-                data_count = 8
 
                 frame_val = ProcessCANFrame(frame)
-                print(frame_val)
+                n2k.ProcessFrame(frame_val)
 
             else:
                 print(f"canusb: {frame}")
+
+
     finally:
         if proc.returncode is None:
             proc.send_signal(signal.SIGINT)
