@@ -2,10 +2,10 @@ from nmea2000.encoder import NMEA2000Encoder, NMEA2000Message, NMEA2000Field
 from nmea2000.decoder import NMEA2000Decoder
 
 ''' Holds the NEMAMessage Class
-    A Sent CAN frame sends one bye per message so one message is recieved in 14 messages (including start and end bytes)
+    A Sent CAN frame sends one bye per message so one message is recieved in 20 messages (including start and end bytes)
 
     Typical message:
-    aa 55   12 07 01 00 00 00 00 00 00 00 00 00 01 00 00 00 00 1b
+    aa 55   01 02 01 01 02 f8 09 08 00 00 00 00 00 00 00 00 00 10
     |---|     
    Start              
    bytes                                        
@@ -20,7 +20,9 @@ class NEMAMessage:
         self.START_FRAME_ONE = "aa"
         self.START_FRAME_TWO = "55"
 
-        self.MESSAGE_LEN = 14 # message len = 12 + start bytes
+        self.start_one = False
+
+        self.MESSAGE_LEN = 40 # message len = 20 bytes (doubled for nibbles)
         self.message_len_count = 0
 
         self.tmp_frame = ""
@@ -29,27 +31,18 @@ class NEMAMessage:
     def ProcessFrame(self, frame):
 
         if frame == self.START_FRAME_ONE:
-            print("START?")
-            self.tmp_frame = frame
-        
-        elif frame == self.START_FRAME_TWO:
-            print("START!!")
 
-            self.message += self.tmp_frame
-            self.message += frame
+            if self.message:
+                print("<<< ", self.message)
 
-            self.tmp_frame = ""
-        
-        elif self.message_len_count <  self.MESSAGE_LEN:
-            self.message += frame
-            self.message_len_count += 1
-        
-        else: #message end
-            print("<<< ", self.message)
-            print("END")
-            
             self.message = ""
             self.message_len_count = 0
+
+            self.message += frame
+        
+        else:
+            self.message += frame
+            self.message_len_count += 1
              
     def LogMessage(self):
         print("message logged >>> ", self.message)    

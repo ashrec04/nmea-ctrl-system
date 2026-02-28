@@ -23,8 +23,6 @@ def ProcessCANFrame(frame: dict):
     match = re.search(r':\s*(.{2})\s+', frame)  # uses this template to extract data byte
     if match:
         value = match.group(1)
-        print(value)
-
 
     return value
 
@@ -57,6 +55,7 @@ async def ListenCanFrames() -> None:
     try:
         while True:
             line = await proc.stdout.readline()
+
             if not line:
                 break
 
@@ -66,6 +65,7 @@ async def ListenCanFrames() -> None:
 
                 frame_val = ProcessCANFrame(frame)
                 n2k.ProcessFrame(frame_val)
+                # print(f"{frame} --> {frame_val}")
 
             else:
                 print(f"canusb: {frame}")
