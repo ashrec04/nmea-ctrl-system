@@ -52,7 +52,7 @@ async def ListenCanFrames() -> None:
             frame = line.decode(errors="replace").strip()
             
             if frame is not None:
-                frame_val, frame_bytes = n2k.ProcessCANFrame(frame)
+                n2k.ProcessCANFrame(frame)
 
             else:
                 print(f"canusb: {frame}")
