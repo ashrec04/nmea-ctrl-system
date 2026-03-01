@@ -109,6 +109,8 @@ static int generate_checksum(const unsigned char *data, int data_len)
 
 static int frame_is_complete(const unsigned char *frame, int frame_len)
 {
+  int is_extended_frame, id_bytes;
+
   if (frame_len > 0) {
     if (frame[0] != 0xaa) {
       /* Need to sync on 0xaa at start of frames, so just skip. */
@@ -126,8 +128,10 @@ static int frame_is_complete(const unsigned char *frame, int frame_len)
     } else {
       return 0;
     }
-  } else if ((frame[1] >> 4) == 0xc) { /* Data frame... */
-    if (frame_len >= (frame[1] & 0xf) + 5) { /* ...payload and 5 bytes. */
+  } else if ((frame[1] & 0xC0) == 0xC0) { /* Data frame (0xC* or 0xE*)... */
+    is_extended_frame = (frame[1] & 0x20) != 0;
+    id_bytes = is_extended_frame ? 4 : 2;
+    if (frame_len >= (frame[1] & 0xf) + id_bytes + 3) { /* start+info+id+payload+end */
       return 1;
     } else {
       return 0;
@@ -437,7 +441,7 @@ static void dump_data_frames(int tty_fd)
 
       if ((frame_len >= 6) &&
           (frame[0] == 0xaa) &&
-          ((frame[1] >> 4) == 0xc)) {
+          ((frame[1] & 0xC0) == 0xC0)) {
         printf("Frame ID: %02x%02x, Data: ", frame[3], frame[2]);
         for (i = frame_len - 2; i > 3; i--) {
           printf("%02x ", frame[i]);
@@ -446,7 +450,7 @@ static void dump_data_frames(int tty_fd)
 
       } else {
         printf("Unknown: ");
-        for (i = 0; i <= frame_len; i++) {
+        for (i = 0; i < frame_len; i++) {
           printf("%02x ", frame[i]);
         }
         printf("\n");
