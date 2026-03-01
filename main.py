@@ -17,16 +17,6 @@ def BuildCanusb() -> None:
     subprocess.run(["sudo","make"], cwd=PROJECT_DIR, check=True)
 
 
-def ProcessCANFrame(frame: dict):
-    value = None
-    # get data byte recieved from frame
-    match = re.search(r':\s*(.{2})\s+', frame)  # uses this template to extract data byte
-    if match:
-        value = match.group(1)
-
-    return value
-
-
 async def DrainStderr(proc: asyncio.subprocess.Process) -> None:
     while True:
         line = await proc.stderr.readline()
@@ -42,8 +32,8 @@ async def ListenCanFrames() -> None:
     # ~/USB-CAN-A $ ./canusb -d /dev/ttyUSB0 -s 125000
     proc = await asyncio.create_subprocess_exec(
         str(CANUSB_BIN),
-        "-d", TTY_DEV,      # TTY device used
-        "-s", str(BAUD_RATE),    # CAN Baud rate, 125K for NMEA2000
+        "-d", TTY_DEV,          # TTY device used
+        "-s", str(BAUD_RATE),   # CAN Baud rate, 125K for NMEA2000
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         cwd=PROJECT_DIR,
@@ -62,10 +52,7 @@ async def ListenCanFrames() -> None:
             frame = line.decode(errors="replace").strip()
             
             if frame is not None:
-
-                frame_val = ProcessCANFrame(frame)
-                n2k.ProcessFrame(frame_val)
-                # print(f"{frame} --> {frame_val}")
+                frame_val, frame_bytes = n2k.ProcessCANFrame(frame)
 
             else:
                 print(f"canusb: {frame}")
