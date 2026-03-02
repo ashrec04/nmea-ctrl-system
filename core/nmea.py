@@ -4,6 +4,8 @@ import re
 from nmea2000.decoder import NMEA2000Decoder
 from nmea2000.utils import calculate_canbus_checksum
 
+import core.data_logger
+
 
 ''' Holds the NEMAMessage Class
     A Sent CAN frame sends one bye per message so one message is recieved in 20 messages (including start and end bytes)
@@ -20,11 +22,18 @@ class NEMAMessage:
         self.encoder = NMEA2000Encoder()
         self.decoder = NMEA2000Decoder()
 
-        self.START_FRAME = "aa"
+        self.data_recieved = False
 
-        self.message_len_count = 0
 
-        self.message = ""
+    def ProcessCANFrame(self, frame) -> None:
+        # Extract all bytes from canusb log line
+        all_bytes = self.ParseHexBytes(frame) 
+
+        if not all_bytes:
+            return None, []
+        
+        self.DecodeMessage(all_bytes)
+    
 
     def ParseHexBytes(self, frame: str):
         frame_match = re.search(r"Frame ID:\s*([0-9a-fA-F]{4})", frame)
@@ -39,16 +48,7 @@ class NEMAMessage:
 
         all_bytes = " ".join(id_bytes + data_bytes)
         return all_bytes # returned in format: "id1 id0 d7 d6 d5 d4 d3 d2 d1 d0 id3 id2"
-    
-    def ProcessCANFrame(self, frame):
-        # Extract all bytes from canusb log line
-        all_bytes = self.ParseHexBytes(frame) 
 
-        if not all_bytes:
-            return None, []
-        
-        self.DecodeMessage(all_bytes)
-    
 
     def DecodeMessage(self, msg_bytes) -> None:
         # Decode the message
@@ -67,14 +67,6 @@ class NEMAMessage:
 
 
         decoded_msg = self.decoder.decode_usb(pkt)
-        
-        self.LogMessage(decoded_msg)
 
-             
-    def LogMessage(self, decoded_msg) -> None:
-        try:
-            entry = f"PGN {decoded_msg.PGN}: {[(fld.id, fld.value) for fld in decoded_msg.fields]}" # add to log
-        except:
-            entry = decoded_msg
-        print(f"message logged <<< {entry}")
+        core.data_logger.LogData(pkt)
         
