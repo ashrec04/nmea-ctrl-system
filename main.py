@@ -1,10 +1,12 @@
 import asyncio
 import contextlib
-import re
 import signal
 import subprocess
 from pathlib import Path
+
 from core.nmea import NEMAMessage
+import core.data_logger
+
 
 PROJECT_DIR = Path(__file__).resolve().parent / "USB-CAN-A"
 CANUSB_BIN = PROJECT_DIR / "canusb"
@@ -15,6 +17,7 @@ TTY_DEV = "/dev/ttyUSB0"
 def BuildCanusb() -> None:
     subprocess.run(["sudo","make", "clean"], cwd=PROJECT_DIR, check=True)
     subprocess.run(["sudo","make"], cwd=PROJECT_DIR, check=True)
+    core.data_logger.LogProgram("CAN USB Communication Built")
 
 
 async def DrainStderr(proc: asyncio.subprocess.Process) -> None:
@@ -41,6 +44,8 @@ async def ListenCanFrames() -> None:
     assert proc.stdout is not None
     assert proc.stderr is not None
     stderr_task = asyncio.create_task(DrainStderr(proc))
+    core.data_logger.LogProgram("CAN USB Communication Channel Open")
+
 
     try:
         while True:
@@ -73,6 +78,7 @@ async def ListenCanFrames() -> None:
 
 
 async def main() -> None:
+    core.data_logger.LogProgram("Program Start")
     BuildCanusb()
     await ListenCanFrames()
 
