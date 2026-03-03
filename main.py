@@ -3,9 +3,14 @@ import contextlib
 import signal
 import subprocess
 from pathlib import Path
+from PyQt6.QtWidgets import QApplication
+import sys
+from qasync import QEventLoop
+
 
 from core.nmea import NEMAMessage
 import core.data_logger
+from gui.gui import MainWindow
 
 
 PROJECT_DIR = Path(__file__).resolve().parent / "USB-CAN-A"
@@ -78,6 +83,17 @@ async def ListenCanFrames() -> None:
 
 
 async def main() -> None:
+    app = QApplication(sys.argv)
+    loop = QEventLoop(app) # initises the gui through asyncio
+
+    asyncio.set_event_loop(loop)
+
+    window = MainWindow()
+    window.show()
+
+    with loop:
+        loop.run_forever()
+
     core.data_logger.LogProgram("Program Start")
     BuildCanusb()
     await ListenCanFrames()
