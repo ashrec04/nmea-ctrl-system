@@ -508,7 +508,7 @@
     <item>
      <layout class="QGridLayout" name="graphGridLayout">
       <item row="0" column="0">
-       <widget class="QWidget" name="graphWidget" native="true"/>
+       <widget class="PlotWidget" name="graphWidget" native="true"/>
       </item>
      </layout>
     </item>
@@ -526,6 +526,14 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlotWidget</class>
+   <extends>QWidget</extends>
+   <header>pyqtgraph</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
