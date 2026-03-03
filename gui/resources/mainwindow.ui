@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1000</width>
-    <height>480</height>
+    <width>720</width>
+    <height>1280</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -18,14 +18,14 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>1000</width>
-    <height>480</height>
+    <width>720</width>
+    <height>1280</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>1000</width>
-    <height>480</height>
+    <width>720</width>
+    <height>1280</height>
    </size>
   </property>
   <property name="palette">
@@ -507,15 +507,14 @@
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="QPushButton" name="pushButton">
-      <property name="text">
-       <string>Press meeeee</string>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>500</height>
+       </size>
       </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLabel" name="label">
       <property name="text">
-       <string>HELLO</string>
+       <string>:D</string>
       </property>
      </widget>
     </item>
@@ -526,7 +525,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1000</width>
+     <width>720</width>
      <height>25</height>
     </rect>
    </property>
