@@ -7,8 +7,6 @@ from PyQt6 import uic
 
 import pyqtgraph as pg
 
-from random import randint
-
 
 #~~ Global Constants
 WINDOW_PATH = 'gui/resources/mainwindow.ui'
@@ -26,62 +24,57 @@ class MainWindow(QMainWindow):
 
         uic.loadUi(WINDOW_PATH, self)   # loads window as defined in mainwindow.ui
 
-        # Temperature vs time dynamic plot
-        self.plot_graph = pg.PlotWidget()
-        self.graphGridLayout.addWidget(self.plot_graph)  # put in grid
+        self.pen = pg.mkPen(color=DARK_BLUE ,width=5)
+        self.title_style = {"color": TEAL_GREEN, "font-size": "18px"}
+        self.axis_style = {"color": TEAL_GREEN, "font-size": "18px"}
+        self.graph_data = {}
+        self.max_points = 100
 
-        self.plot_graph.setBackground("w")
-        pen = pg.mkPen(color=DARK_BLUE, width=5)
-        self.plot_graph.setTitle("Temperature vs Time", color="b", size="20pt")
-        styles = {"color": "red", "font-size": "18px"}
-        self.plot_graph.setLabel("left", "Temperature (°C)", **styles)
-        self.plot_graph.setLabel("bottom", "Time (min)", **styles)
-        self.plot_graph.addLegend()
-        self.plot_graph.showGrid(x=True, y=True)
-        self.plot_graph.setYRange(20, 40)
-        self.time = list(range(10))
-        self.temperature = [randint(20, 40) for _ in range(10)]
-        # Get a line reference
-        self.line = self.plot_graph.plot(
-            self.time,
-            self.temperature,
-            name="Temperature Sensor",
-            pen=pen,
-            symbol="+",
-            symbolSize=15,
-            symbolBrush="b",
-        )
-        # Add a timer to simulate new temperature measurements
-        self.timer = QTimer()
-        self.timer.setInterval(300)
-        self.timer.timeout.connect(self.update_plot)
-        self.timer.start()
+    def DataInput(self, pgn, value):
+        graph_name = str(pgn)
+        if graph_name not in self.graph_data:
+            self.AddGraph(graph_name)
 
-    def AddGraph(self):
-        styles = {"color": TEAL_GREEN, "font-size": "18px"}
+        self.AddGraphPlot(graph_name, value)
 
-        self.plot_graph = pg.PlotWidget()
-        self.graphGridLayout.addWidget(self.plot_graph)  # put in grid
 
-        self.plot_graph.setBackground("w")
-        pen = pg.mkPen(color=DARK_BLUE ,width=5)
-        self.plot_graph.setTitle("Temperature vs Time", color=TEAL_GREEN, size="20pt")
-        self.plot_graph.setLabel("left", "Temperature (°C)", **styles) # y axis
-        self.plot_graph.setLabel("bottom", "Time (min)", **styles) # x axis
-        self.plot_graph.showGrid(x=True, y=True)
-        self.plot_graph.setXRange(1, 10)
-        self.plot_graph.setYRange(20, 40)
+    def AddGraph(self, pgn):
+        graph_name = str(pgn)
 
-        minutes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        temperature = [32, 33, 31, 29, 32, 35, 30, 30, 32, 34]
+        plot_graph = pg.PlotWidget()
+        plot_graph.setObjectName(graph_name)
+        self.graphGridLayout.addWidget(plot_graph)  # put in grid
 
-        self.plot_graph.plot(minutes, temperature, pen=pen)
+        plot_graph.setBackground("w")
+        plot_graph.setTitle(f"{graph_name} vs Time", **self.title_style)
+        plot_graph.setLabel("left", "Value", **self.axis_style)  # y axis
+        plot_graph.setLabel("bottom", "Sample", **self.axis_style)  # x axis
+        plot_graph.showGrid(x=True, y=True)
 
-    def update_plot(self):
-        self.time = self.time[1:]
-        self.time.append(self.time[-1] + 1)
-        self.temperature = self.temperature[1:]
-        self.temperature.append(randint(20, 40))
-        self.line.setData(self.time, self.temperature)
+        line = plot_graph.plot([], [], pen=self.pen)
+        self.graph_data[graph_name] = {"x": [], "y": [], "line": line}
+
+    def AddGraphPlot(self, graph_name, value):
+        graph_name = str(graph_name)
+        graph = self.graph_data.get(graph_name)
+
+        if graph is None:
+            self.AddGraph(graph_name)
+            graph = self.graph_data[graph_name]
+
+        try:
+            y_value = float(value)
+        except (TypeError, ValueError):
+            return
+
+        next_x = graph["x"][-1] + 1 if graph["x"] else 0
+        graph["x"].append(next_x)
+        graph["y"].append(y_value)
+
+        if len(graph["x"]) > self.max_points:
+            graph["x"] = graph["x"][-self.max_points:]
+            graph["y"] = graph["y"][-self.max_points:]
+
+        graph["line"].setData(graph["x"], graph["y"])
     
     

@@ -25,14 +25,29 @@ class NEMAMessage:
         self.data_recieved = False
 
 
-    def ProcessCANFrame(self, frame) -> None:
+    def ProcessCANFrame(self, window, frame) -> None:
         # Extract all bytes from canusb log line
         all_bytes = self.ParseHexBytes(frame) 
 
         if not all_bytes:
             return None, []
         
-        self.DecodeMessage(all_bytes)
+        pkt = self.DecodeMessage(all_bytes)
+        if pkt is None:
+            return
+
+        decoded_msg = self.decoder.decode_usb(pkt)
+        if decoded_msg is None:
+            return
+
+        value = self.ExtractNumericValue(decoded_msg)
+        if value is None:
+            return
+
+        window.DataInput(decoded_msg.PGN, value)
+
+
+        core.data_logger.LogData(pkt)
     
 
     def ParseHexBytes(self, frame: str):
@@ -50,7 +65,7 @@ class NEMAMessage:
         return all_bytes # returned in format: "id1 id0 d7 d6 d5 d4 d3 d2 d1 d0 id3 id2"
 
 
-    def DecodeMessage(self, msg_bytes) -> None:
+    def DecodeMessage(self, msg_bytes) -> bytes:
         # Decode the message
 
         rx = bytes.fromhex(msg_bytes)
@@ -66,7 +81,17 @@ class NEMAMessage:
         pkt = pkt19 + bytes([calculate_canbus_checksum(pkt19)])  # checksum uses bytes [2:19]
 
 
-        decoded_msg = self.decoder.decode_usb(pkt)
+        return pkt
 
-        core.data_logger.LogData(pkt)
+    def ExtractNumericValue(self, decoded_msg):
+        for field in decoded_msg.fields:
+            field_value = field.value
+            if isinstance(field_value, (int, float)) and not isinstance(field_value, bool):
+                return field_value
+
+            raw_value = field.raw_value
+            if isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool):
+                return raw_value
+
+        return None
         

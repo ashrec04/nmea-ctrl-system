@@ -91,7 +91,7 @@ async def main() -> None:
     window = MainWindow()
     window.showFullScreen()
 
-    window.AddGraph()
+    core.data_logger.LogProgram("Program Start")
 
     with loop:
         loop.run_forever()
