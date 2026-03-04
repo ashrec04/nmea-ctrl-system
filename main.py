@@ -89,7 +89,9 @@ async def main() -> None:
     asyncio.set_event_loop(loop)
 
     window = MainWindow()
-    window.show()
+    window.showFullScreen()
+
+    window.AddGraph()
 
     with loop:
         loop.run_forever()
