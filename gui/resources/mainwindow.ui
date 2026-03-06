@@ -506,7 +506,114 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
-     <layout class="QGridLayout" name="graphGridLayout"/>
+     <layout class="QVBoxLayout" name="verticalLayout" stretch="0">
+      <item>
+       <widget class="QTabWidget" name="tabWidget">
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <widget class="QWidget" name="GraphView">
+         <property name="font">
+          <font>
+           <family>Verdana</family>
+          </font>
+         </property>
+         <attribute name="title">
+          <string>Tab 1</string>
+         </attribute>
+         <widget class="QWidget" name="verticalLayoutWidget">
+          <property name="geometry">
+           <rect>
+            <x>-1</x>
+            <y>10</y>
+            <width>691</width>
+            <height>1151</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,25">
+           <item>
+            <widget class="QLabel" name="graphViewTitleLabel">
+             <property name="font">
+              <font>
+               <family>Verdana</family>
+               <pointsize>20</pointsize>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Graph View</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+             </property>
+             <property name="indent">
+              <number>3</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QGridLayout" name="graphGridLayout">
+             <property name="sizeConstraint">
+              <enum>QLayout::SizeConstraint::SetFixedSize</enum>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="DataView">
+         <attribute name="title">
+          <string>Tab 2</string>
+         </attribute>
+         <widget class="QWidget" name="verticalLayoutWidget_2">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>691</width>
+            <height>1151</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,25">
+           <item>
+            <widget class="QLabel" name="dataViewTitleLabel">
+             <property name="font">
+              <font>
+               <family>Verdana</family>
+               <pointsize>20</pointsize>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Data View</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
+             </property>
+             <property name="indent">
+              <number>3</number>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QGridLayout" name="dataGridLayout">
+             <property name="sizeConstraint">
+              <enum>QLayout::SizeConstraint::SetFixedSize</enum>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
