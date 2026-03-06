@@ -84,14 +84,9 @@ class NEMAMessage:
         return pkt
 
     def ExtractNumericValue(self, decoded_msg):
-        for field in decoded_msg.fields:
-            field_value = field.value
-            if isinstance(field_value, (int, float)) and not isinstance(field_value, bool):
-                return field_value
-
-            raw_value = field.raw_value
-            if isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool):
-                return raw_value
+        for fld in decoded_msg.fields:
+            if fld.id =="depth" or fld.id =="windSpeed" or fld.id =="sog" :
+                return fld.value
 
         return None
         

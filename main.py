@@ -33,7 +33,7 @@ async def DrainStderr(proc: asyncio.subprocess.Process) -> None:
         print(f"canusb stderr: {line.decode(errors='replace').rstrip()}")
 
 
-async def ListenCanFrames() -> None:
+async def ListenCanFrames(window: MainWindow) -> None:
     n2k = NEMAMessage()
 
     # run the canusb program command
@@ -62,7 +62,7 @@ async def ListenCanFrames() -> None:
             frame = line.decode(errors="replace").strip()
             
             if frame is not None:
-                n2k.ProcessCANFrame(frame)
+                n2k.ProcessCANFrame(window, frame)
 
             else:
                 print(f"canusb: {frame}")
@@ -93,12 +93,17 @@ async def main() -> None:
 
     core.data_logger.LogProgram("Program Start")
 
-    with loop:
-        loop.run_forever()
-
-    core.data_logger.LogProgram("Program Start")
     BuildCanusb()
-    await ListenCanFrames()
+    can_listener_task = loop.create_task(ListenCanFrames(window))
+    app.aboutToQuit.connect(loop.stop)
+
+    with loop:
+        try:
+            loop.run_forever()
+        finally:
+            can_listener_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                loop.run_until_complete(can_listener_task)
 
 
 if __name__ == "__main__":
