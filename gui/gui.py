@@ -11,6 +11,7 @@ WINDOW_PATH = 'gui/resources/mainwindow.ui'
 LIGHT_BLUE = "#E3F6FD"
 DARK_BLUE = "#0B76A0"
 TEAL_GREEN = "#1AA5A2"
+MAX_GRAPH_POINTS = 50
 
 GRAPH_META = {
   "128267": {"title": "Water Depth", "axis": "Depth (m)"},
@@ -35,7 +36,7 @@ class MainWindow(QMainWindow):
 
         uic.loadUi(WINDOW_PATH, self)   # loads window as defined in mainwindow.ui
 
-        self.pen = pg.mkPen(color=DARK_BLUE ,width=5)
+        self.pen = pg.mkPen(color=DARK_BLUE ,width=3)
         self.title_style = {"color": TEAL_GREEN, "font-size": "18px"}
         self.axis_style = {"color": TEAL_GREEN, "font-size": "18px"}
         self.graph_data = {}
@@ -90,7 +91,7 @@ class MainWindow(QMainWindow):
             pen=self.pen # line style
         )
 
-        self.graph_data[pgn] = {"x": [], "y": [], "line": graph_line}
+        self.graph_data[pgn] = {"x": [], "y": [], "line": graph_line, "next_x": 0}
         self.graph_widgets[pgn] = plot_graph
 
 
@@ -103,8 +104,13 @@ class MainWindow(QMainWindow):
             print("ADDING PLOT ERROR: ", e)
             return
 
-        g["x"].append(len(g["x"]))
+        g["x"].append(g["next_x"])
         g["y"].append(y_value)
+        g["next_x"] += 1
+
+        if len(g["x"]) > MAX_GRAPH_POINTS:  # keeps only 50 points on graph at once
+            g["x"] = g["x"][-MAX_GRAPH_POINTS:]
+            g["y"] = g["y"][-MAX_GRAPH_POINTS:]
 
         g["line"].setData(g["x"], g["y"])
         plot_graph = self.graph_widgets.get(pgn)
