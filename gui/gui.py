@@ -4,6 +4,8 @@ from PyQt6 import QtWidgets
 from PyQt6 import uic
 
 import pyqtgraph as pg
+import time
+from datetime import datetime
 
 #~~ Global Constants
 WINDOW_PATH = 'gui/resources/mainwindow.ui'
@@ -20,6 +22,16 @@ GRAPH_META = {
 }
 
 #~~
+
+class MinuteAxisItem(pg.AxisItem):
+    def tickStrings(self, values, scale, spacing):
+        labels = []
+        for value in values:
+            try:
+                labels.append(datetime.fromtimestamp(value).strftime("%H:%M"))
+            except (ValueError, OSError, OverflowError):
+                labels.append("")
+        return labels
 
 # Subclass QMainWindow to customise the window
 class MainWindow(QMainWindow):
@@ -57,7 +69,7 @@ class MainWindow(QMainWindow):
 
 
     def AddGraph(self, pgn):
-        plot_graph = pg.PlotWidget()
+        plot_graph = pg.PlotWidget(axisItems={"bottom": MinuteAxisItem(orientation="bottom")})
         plot_graph.setObjectName(pgn)
         plot_graph.setMinimumHeight(260)
         plot_graph.setSizePolicy(
@@ -91,7 +103,7 @@ class MainWindow(QMainWindow):
             pen=self.pen # line style
         )
 
-        self.graph_data[pgn] = {"x": [], "y": [], "line": graph_line, "next_x": 0}
+        self.graph_data[pgn] = {"x": [], "y": [], "line": graph_line}
         self.graph_widgets[pgn] = plot_graph
 
 
@@ -104,9 +116,8 @@ class MainWindow(QMainWindow):
             print("ADDING PLOT ERROR: ", e)
             return
 
-        g["x"].append(g["next_x"])
+        g["x"].append(time.time())
         g["y"].append(y_value)
-        g["next_x"] += 1
 
         if len(g["x"]) > MAX_GRAPH_POINTS:  # keeps only 50 points on graph at once
             g["x"] = g["x"][-MAX_GRAPH_POINTS:]
