@@ -16,7 +16,8 @@ from gui.gui import MainWindow
 PROJECT_DIR = Path(__file__).resolve().parent / "USB-CAN-A"
 CANUSB_BIN = PROJECT_DIR / "canusb"
 BAUD_RATE = 125000
-TTY_DEV = "/dev/ttyUSB0"
+TTY_DEV = "/dev/ttyUSB1" # MAY NEED TO BE CHANGED TO USB0 
+                         # check by running ls /dev/ttyUSB*
 
 
 def BuildCanusb() -> None:

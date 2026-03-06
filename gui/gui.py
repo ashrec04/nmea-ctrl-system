@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
         self.axis_style = {"color": TEAL_GREEN, "font-size": "18px"}
         self.graph_data = {}
         self.graph_widgets = {}
-        self.graph_columns = 1
+        self.graph_columns = 2
 
         self.graphGridLayout.setContentsMargins(12, 12, 12, 12)
         self.graphGridLayout.setHorizontalSpacing(12)
@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
 
         graph_meta = GRAPH_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value"})
 
-        plot_graph.setBackground("w")
+        plot_graph.setBackground(LIGHT_BLUE)
         plot_graph.setTitle(graph_meta["title"], **self.title_style)
         plot_graph.setLabel("left", graph_meta["axis"], **self.axis_style) # y axis
         plot_graph.setLabel("bottom", "Time", **self.axis_style) # x axis
