@@ -1,5 +1,7 @@
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6 import QtWidgets
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QFont
 
 from PyQt6 import uic
 
@@ -68,6 +70,9 @@ class MainWindow(QMainWindow):
         self.dataGridLayout.setContentsMargins(12, 12, 12, 12)
         self.dataGridLayout.setHorizontalSpacing(12)
         self.dataGridLayout.setVerticalSpacing(12)
+        self.dataGridLayout.setAlignment(
+            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
+        )
 
 
     def DataInput(self, pgn, value):
@@ -150,11 +155,37 @@ class MainWindow(QMainWindow):
     def AddDataWidget(self, pgn):
         sensor_meta = SENSOR_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value"})
 
-        data_widget = QtWidgets.QWidget()
+        data_widget = QtWidgets.QWidget() # widget holding title & data label
         data_widget_layout = QtWidgets.QVBoxLayout(data_widget)
 
+        data_widget.setStyleSheet( # colour widget bg and make it look rounded
+            f"background-color: {DARK_BLUE};"
+            f"border: 1px solid {DARK_BLUE};"
+            "border-radius: 12px;"
+        )
+
+        data_widget.setMaximumSize(QSize(400,200))
+        data_widget.setMinimumSize(QSize(200, 200))
+        data_widget.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Preferred,
+            QtWidgets.QSizePolicy.Policy.Preferred
+        )
+
+
+        #declare labels & their text
         title_label = QtWidgets.QLabel(sensor_meta["title"])
         data_val_label = QtWidgets.QLabel("0.0")
+
+        #set alignment
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        data_val_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        #set font size & colour
+        title_label.setFont(QFont("Verdana", 18))
+        title_label.setStyleSheet(f"color: {LIGHT_BLUE};")
+        data_val_label.setFont(QFont("Verdana", 20, QFont.Weight.Bold))
+        data_val_label.setStyleSheet(f"color: {LIGHT_BLUE};")
+
 
         data_widget_layout.addWidget(title_label)
         data_widget_layout.addWidget(data_val_label)
