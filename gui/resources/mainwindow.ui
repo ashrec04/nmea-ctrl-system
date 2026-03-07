@@ -519,7 +519,7 @@
           </font>
          </property>
          <attribute name="title">
-          <string>Tab 1</string>
+          <string>Graph View</string>
          </attribute>
          <widget class="QWidget" name="verticalLayoutWidget">
           <property name="geometry">
@@ -566,7 +566,7 @@
         </widget>
         <widget class="QWidget" name="DataView">
          <attribute name="title">
-          <string>Tab 2</string>
+          <string>Data View</string>
          </attribute>
          <widget class="QWidget" name="verticalLayoutWidget_2">
           <property name="geometry">

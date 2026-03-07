@@ -14,8 +14,7 @@ LIGHT_BLUE = "#E3F6FD"
 DARK_BLUE = "#0B76A0"
 TEAL_GREEN = "#1AA5A2"
 MAX_GRAPH_POINTS = 50
-
-GRAPH_META = {
+SENSOR_META = {
   "128267": {"title": "Water Depth", "axis": "Depth (m)"},
   "129026": {"title": "Speed Over Ground", "axis": "Speed (Knots)"},
   "130306": {"title": "Wind Data", "axis": "Speed (Knots)"}
@@ -51,21 +50,34 @@ class MainWindow(QMainWindow):
         self.pen = pg.mkPen(color=DARK_BLUE ,width=3)
         self.title_style = {"color": TEAL_GREEN, "font-size": "18px"}
         self.axis_style = {"color": TEAL_GREEN, "font-size": "18px"}
+        
+        ## current Graphs and label info
         self.graph_data = {}
         self.graph_widgets = {}
+
+        self.label_data = {}
+        self.data_widgets = {}
+
         self.graph_columns = 2
+        self.data_columns = 2
 
         self.graphGridLayout.setContentsMargins(12, 12, 12, 12)
         self.graphGridLayout.setHorizontalSpacing(12)
         self.graphGridLayout.setVerticalSpacing(12)
+
+        self.dataGridLayout.setContentsMargins(12, 12, 12, 12)
+        self.dataGridLayout.setHorizontalSpacing(12)
+        self.dataGridLayout.setVerticalSpacing(12)
 
 
     def DataInput(self, pgn, value):
         graph_name = str(pgn)
         if graph_name not in self.graph_data:
             self.AddGraph(graph_name)
+            self.AddDataWidget(graph_name)
 
         self.AddGraphPlot(graph_name, value)
+        self.UpdateDataLabel(graph_name, value)
 
 
     def AddGraph(self, pgn):
@@ -87,7 +99,7 @@ class MainWindow(QMainWindow):
 
         plot_graph.show()
 
-        graph_meta = GRAPH_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value"})
+        graph_meta = SENSOR_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value"})
 
         plot_graph.setBackground(LIGHT_BLUE)
         plot_graph.setTitle(graph_meta["title"], **self.title_style)
@@ -133,3 +145,37 @@ class MainWindow(QMainWindow):
             plot_graph.repaint()
 
         self.graph_data[pgn] = g
+
+
+    def AddDataWidget(self, pgn):
+        sensor_meta = SENSOR_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value"})
+
+        data_widget = QtWidgets.QWidget()
+        data_widget_layout = QtWidgets.QVBoxLayout(data_widget)
+
+        title_label = QtWidgets.QLabel(sensor_meta["title"])
+        data_val_label = QtWidgets.QLabel("0.0")
+
+        data_widget_layout.addWidget(title_label)
+        data_widget_layout.addWidget(data_val_label)
+
+        widget_index = len(self.data_widgets)
+        row = widget_index // self.data_columns
+        column = widget_index % self.data_columns
+
+
+        self.dataGridLayout.addWidget(data_widget, row, column)  # put in grid
+        self.dataGridLayout.setRowStretch(row, 1)
+        self.dataGridLayout.setColumnStretch(column, 1)
+
+        self.label_data[pgn] = data_val_label
+        self.data_widgets[pgn] = data_widget
+
+
+
+    def UpdateDataLabel(self, pgn, value):
+
+        label = self.label_data.get(pgn)
+        
+        if label is not None:
+            label.setText(str(round(value, 2))) #show val on screen rounded to 2dp
