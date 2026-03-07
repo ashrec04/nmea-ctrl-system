@@ -6,8 +6,7 @@ from PyQt6.QtGui import QFont, QPixmap
 from PyQt6 import uic
 
 import pyqtgraph as pg
-import time
-from datetime import datetime
+from gui.widget_presets import GraphWidget, DataWidget
 
 #~~ Global Constants
 WINDOW_PATH = 'gui/resources/mainwindow.ui'
@@ -24,16 +23,6 @@ SENSOR_META = {
 }
 
 #~~
-
-class MinuteAxisItem(pg.AxisItem):
-    def tickStrings(self, values, scale, spacing):
-        labels = []
-        for value in values:
-            try:
-                labels.append(datetime.fromtimestamp(value).strftime("%H:%M"))
-            except (ValueError, OSError, OverflowError):
-                labels.append("")
-        return labels
 
 # Subclass QMainWindow to customise the window
 class MainWindow(QMainWindow):
@@ -59,18 +48,10 @@ class MainWindow(QMainWindow):
             )
         )
 
-        self.pen = pg.mkPen(color=DARK_BLUE ,width=3)
-        self.title_style = {"color": TEAL_GREEN, "font-size": "18px"}
-        self.axis_style = {"color": TEAL_GREEN, "font-size": "18px"}
-        
-        ## current Graphs and label info
-        self.graph_data = {}
-        self.graph_widgets = {}
-
-        self.label_data = {}
-        self.data_widgets = {}
-
+        self.graph_widgets: dict[str, GraphWidget] = {} # dictionary with pgn : GraphWidget
         self.graph_columns = 2
+
+        self.data_widgets: dict[str, DataWidget] = {} # dictionary with pgn : DataWidget
         self.data_columns = 2
 
         self.graphGridLayout.setContentsMargins(12, 12, 12, 12)
@@ -86,136 +67,40 @@ class MainWindow(QMainWindow):
 
 
     def DataInput(self, pgn, value):
-        graph_name = str(pgn)
-        if graph_name not in self.graph_data:
-            self.AddGraph(graph_name)
-            self.AddDataWidget(graph_name)
+        input_name = str(pgn)
+        if input_name not in self.graph_widgets:
+            
+            #~ Make new Graph Widget
+            graph_widget = GraphWidget(input_name)
+            self.graph_widgets[input_name] = graph_widget # save to dict
 
-        self.AddGraphPlot(graph_name, value)
-        self.UpdateDataLabel(graph_name, value)
+            graph_index = len(self.graph_widgets) - 1
+            row = graph_index // self.graph_columns
+            column = graph_index % self.graph_columns
 
+            self.graphGridLayout.addWidget(graph_widget.g, row, column)
+            self.graphGridLayout.setRowStretch(row, 1)
+            self.graphGridLayout.setColumnStretch(column, 1)
+            graph_widget.g.show()
+            #~ 
 
-    def AddGraph(self, pgn):
-        plot_graph = pg.PlotWidget(axisItems={"bottom": MinuteAxisItem(orientation="bottom")})
-        plot_graph.setObjectName(pgn)
-        plot_graph.setMinimumHeight(260)
-        plot_graph.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Expanding,
-            QtWidgets.QSizePolicy.Policy.Expanding,
-        )
+            #~ Make new Data Widget
+            data_widget = DataWidget(input_name)
+            self.data_widgets[input_name] = data_widget # save to dict
 
-        graph_index = len(self.graph_widgets)
-        row = graph_index // self.graph_columns
-        column = graph_index % self.graph_columns
+            data_index = len(self.data_widgets) - 1
+            row = data_index // self.data_columns
+            column = data_index % self.data_columns
 
-        self.graphGridLayout.addWidget(plot_graph, row, column)  # put in grid
-        self.graphGridLayout.setRowStretch(row, 1)
-        self.graphGridLayout.setColumnStretch(column, 1)
+            self.dataGridLayout.addWidget(data_widget.d, row, column)
+            self.dataGridLayout.setRowStretch(row, 1)
+            self.dataGridLayout.setColumnStretch(column, 1)
+            data_widget.d.show()
+            #~ 
 
-        plot_graph.show()
+        #~ add value to graph and data views
+        graph_widget = self.graph_widgets[input_name]
+        graph_widget.AddPoint(value)
 
-        graph_meta = SENSOR_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value"})
-
-        plot_graph.setBackground(LIGHT_BLUE)
-        plot_graph.setTitle(graph_meta["title"], **self.title_style)
-        plot_graph.setLabel("left", graph_meta["axis"], **self.axis_style) # y axis
-        plot_graph.setLabel("bottom", "Time", **self.axis_style) # x axis
-        plot_graph.getAxis("bottom").enableAutoSIPrefix(False)
-
-        plot_graph.showGrid(x=True, y=True)
-
-        graph_line = plot_graph.plot(
-            [], # x plot
-            [], # y plot
-            pen=self.pen # line style
-        )
-
-        self.graph_data[pgn] = {"x": [], "y": [], "line": graph_line}
-        self.graph_widgets[pgn] = plot_graph
-
-
-    def AddGraphPlot(self, pgn, value):
-        g = self.graph_data.get(pgn)
-
-        try:
-            y_value = float(value)
-        except (TypeError, ValueError) as e:
-            print("ADDING PLOT ERROR: ", e)
-            return
-
-        g["x"].append(time.time())
-        g["y"].append(y_value)
-
-        if len(g["x"]) > MAX_GRAPH_POINTS:  # keeps only 50 points on graph at once
-            g["x"] = g["x"][-MAX_GRAPH_POINTS:]
-            g["y"] = g["y"][-MAX_GRAPH_POINTS:]
-
-        g["line"].setData(g["x"], g["y"])
-        plot_graph = self.graph_widgets.get(pgn)
-
-        if plot_graph is not None:
-            plot_graph.enableAutoRange(axis="x", enable=True)
-            plot_graph.enableAutoRange(axis="y", enable=True)
-            plot_graph.update()
-            plot_graph.repaint()
-
-        self.graph_data[pgn] = g
-
-
-    def AddDataWidget(self, pgn):
-        sensor_meta = SENSOR_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value"})
-
-        data_widget = QtWidgets.QWidget() # widget holding title & data label
-        data_widget_layout = QtWidgets.QVBoxLayout(data_widget)
-
-        data_widget.setStyleSheet( # colour widget bg and make it look rounded
-            f"background-color: {DARK_BLUE};"
-            f"border: 1px solid {DARK_BLUE};"
-            "border-radius: 12px;"
-        )
-
-        data_widget.setMaximumSize(QSize(400,200))
-        data_widget.setMinimumSize(QSize(200, 200))
-        data_widget.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred,
-            QtWidgets.QSizePolicy.Policy.Preferred
-        )
-
-
-        #declare labels & their text
-        title_label = QtWidgets.QLabel(sensor_meta["title"])
-        data_val_label = QtWidgets.QLabel("0.0")
-
-        #set alignment
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        data_val_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        #set font size & colour
-        title_label.setFont(QFont("Verdana", 18))
-        title_label.setStyleSheet(f"color: {LIGHT_BLUE};")
-        data_val_label.setFont(QFont("Verdana", 20, QFont.Weight.Bold))
-        data_val_label.setStyleSheet(f"color: {LIGHT_BLUE};")
-
-
-        data_widget_layout.addWidget(title_label)
-        data_widget_layout.addWidget(data_val_label)
-
-        widget_index = len(self.data_widgets)
-        row = widget_index // self.data_columns
-        column = widget_index % self.data_columns
-
-
-        self.dataGridLayout.addWidget(data_widget, row, column)  # put in grid
-        self.dataGridLayout.setRowStretch(row, 1)
-        self.dataGridLayout.setColumnStretch(column, 1)
-
-        self.label_data[pgn] = data_val_label
-        self.data_widgets[pgn] = data_widget
-
-
-    def UpdateDataLabel(self, pgn, value):
-        sensor_meta = SENSOR_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value", "unit": "Value"})
-        label = self.label_data.get(pgn)
-        
-        if label is not None:
-            label.setText(f"{str(round(value, 2))} {sensor_meta["unit"]}") #show val on screen rounded to 2dp
+        data_widget = self.data_widgets[input_name]
+        data_widget.UpdateData(value)
