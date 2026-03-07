@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QMainWindow
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QPixmap
 
 from PyQt6 import uic
 
@@ -11,6 +11,7 @@ from datetime import datetime
 
 #~~ Global Constants
 WINDOW_PATH = 'gui/resources/mainwindow.ui'
+ICON_PATH = 'gui/resources/icon.png'
 
 LIGHT_BLUE = "#E3F6FD"
 DARK_BLUE = "#0B76A0"
@@ -48,6 +49,15 @@ class MainWindow(QMainWindow):
         )
 
         uic.loadUi(WINDOW_PATH, self)   # loads window as defined in mainwindow.ui
+
+        #insert logo into boatSenseIconLabel
+        self.boatSenseIconLabel.setPixmap(
+            QPixmap(ICON_PATH).scaled(
+                50, 50,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
+        )
 
         self.pen = pg.mkPen(color=DARK_BLUE ,width=3)
         self.title_style = {"color": TEAL_GREEN, "font-size": "18px"}
