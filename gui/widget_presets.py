@@ -89,6 +89,8 @@ class DataWidget:
 
         self.pgn = pgn
         self.sensor_meta = SENSOR_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value", "unit": "Value"})
+        self.update_count = 0
+        self.update_interval = 5
 
         self.d = QtWidgets.QWidget() # widget holding title & data label
         d_layout = QtWidgets.QVBoxLayout(self.d)
@@ -125,8 +127,14 @@ class DataWidget:
 
 
     def UpdateData(self, value):
-        try:
-            numeric_value = float(value)
-        except (TypeError, ValueError):
-            return
-        self.value_label.setText(f"{round(numeric_value, 2)} {self.sensor_meta["unit"]}") #show val on screen rounded to 1dp
+        
+        if self.update_count >= self.update_interval: # only update data at every 5th recieved
+            self.update_count = 0
+            try:
+                numeric_value = float(value)
+            except (TypeError, ValueError):
+                return
+            self.value_label.setText(f"{round(numeric_value, 2)} {self.sensor_meta["unit"]}") #show val on screen rounded to 1dp
+        
+        else:
+            self.update_count += 1
