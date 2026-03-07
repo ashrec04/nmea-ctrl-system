@@ -508,13 +508,32 @@
     <item>
      <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <layout class="QHBoxLayout" name="horizontalLayout_title">
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
         <item>
          <widget class="QLabel" name="boatSenseNameLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="font">
            <font>
             <family>Verdana</family>
-            <pointsize>10</pointsize>
+            <pointsize>15</pointsize>
             <bold>true</bold>
            </font>
           </property>
@@ -525,8 +544,17 @@
         </item>
         <item>
          <widget class="QLabel" name="boatSenseIconLabel">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>50</horstretch>
+            <verstretch>50</verstretch>
+           </sizepolicy>
+          </property>
           <property name="text">
            <string>iconhere</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
           </property>
          </widget>
         </item>
@@ -555,7 +583,7 @@
             <height>1161</height>
            </rect>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,25">
+          <layout class="QVBoxLayout" name="verticalLayout_graph" stretch="1,25">
            <item>
             <widget class="QLabel" name="graphViewTitleLabel">
              <property name="font">
@@ -602,7 +630,7 @@
             <height>1151</height>
            </rect>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,25">
+          <layout class="QVBoxLayout" name="verticalLayout_data" stretch="1,25">
            <item>
             <widget class="QLabel" name="dataViewTitleLabel">
              <property name="font">
@@ -649,7 +677,7 @@
             <height>1161</height>
            </rect>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_6" stretch="1,25">
+          <layout class="QVBoxLayout" name="verticalLayout_alarms" stretch="1,25">
            <item>
             <widget class="QLabel" name="alarmViewTitleLabel">
              <property name="font">
