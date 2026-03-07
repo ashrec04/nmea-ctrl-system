@@ -18,9 +18,9 @@ DARK_BLUE = "#0B76A0"
 TEAL_GREEN = "#1AA5A2"
 MAX_GRAPH_POINTS = 50
 SENSOR_META = {
-  "128267": {"title": "Water Depth", "axis": "Depth (m)"},
-  "129026": {"title": "Speed Over Ground", "axis": "Speed (Knots)"},
-  "130306": {"title": "Wind Data", "axis": "Speed (Knots)"}
+  "128267": {"title": "Water Depth", "axis": "Depth (m)", "unit": "Meters"},
+  "129026": {"title": "Speed Over Ground", "axis": "Speed (Knots)", "unit": "Knots"},
+  "130306": {"title": "Wind Data", "axis": "Speed (Knots)", "unit": "Knots"}
 }
 
 #~~
@@ -213,10 +213,9 @@ class MainWindow(QMainWindow):
         self.data_widgets[pgn] = data_widget
 
 
-
     def UpdateDataLabel(self, pgn, value):
-
+        sensor_meta = SENSOR_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value", "unit": "Value"})
         label = self.label_data.get(pgn)
         
         if label is not None:
-            label.setText(str(round(value, 2))) #show val on screen rounded to 2dp
+            label.setText(f"{str(round(value, 2))} {sensor_meta["unit"]}") #show val on screen rounded to 2dp
