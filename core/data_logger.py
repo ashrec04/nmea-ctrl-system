@@ -13,7 +13,7 @@ def LogProgram(msg):
     FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
     logging.basicConfig(format=FORMAT)
     logger.setLevel(logging.DEBUG)
-    logger.debug(msg) 
+    logger.debug(msg)
 
 
 def LogError(e):

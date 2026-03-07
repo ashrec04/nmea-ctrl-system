@@ -540,6 +540,9 @@ int main(int argc, char *argv[])
   CANUSB_SPEED speed = 0;
   int baudrate = CANUSB_TTY_BAUD_RATE_DEFAULT;
 
+  /* Ensure each printed frame is flushed immediately when stdout is piped */
+  setvbuf(stdout, NULL, _IOLBF, 0);
+
   while ((c = getopt(argc, argv, "htd:s:b:i:j:n:g:m:")) != -1) {
     switch (c) {
     case 'h':
