@@ -48,11 +48,11 @@ def CleanLog():
     decoder = NMEA2000Decoder()
     time_now = datetime.now()
 
-    # reduce_sample_rate = time_now - timedelta(days=LOG_REDUCE_SAMPLES_THRESHOLD_DAYS)
-    # delete_all = time_now - timedelta(days=LOG_DELETE_THRESHOLD_DAYS)
+    reduce_sample_rate = time_now - timedelta(days=LOG_REDUCE_SAMPLES_THRESHOLD_DAYS)
+    delete_all = time_now - timedelta(days=LOG_DELETE_THRESHOLD_DAYS)
 
-    reduce_sample_rate = time_now - timedelta(minutes=LOG_REDUCE_SAMPLES_THRESHOLD_DAYS)
-    delete_all = time_now - timedelta(minutes=LOG_DELETE_THRESHOLD_DAYS)
+    # reduce_sample_rate = time_now - timedelta(minutes=LOG_REDUCE_SAMPLES_THRESHOLD_DAYS)
+    # delete_all = time_now - timedelta(minutes=LOG_DELETE_THRESHOLD_DAYS)
 
     sample_count = 0
     messages_removed = 0
