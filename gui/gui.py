@@ -1,7 +1,6 @@
 from PyQt6.QtWidgets import QMainWindow
-from PyQt6 import QtWidgets
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtGui import QFont, QPixmap
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
 
 from PyQt6 import uic
 

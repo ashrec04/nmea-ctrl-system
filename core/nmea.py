@@ -37,6 +37,7 @@ class NEMAMessage:
             return
 
         decoded_msg = self.decoder.decode_usb(pkt)
+
         if decoded_msg is None:
             return
 
@@ -45,9 +46,7 @@ class NEMAMessage:
             return
 
         window.DataInput(decoded_msg.PGN, value)
-
-
-        core.data_logger.LogData(pkt)
+        core.data_logger.LogData(pkt, decoded_msg.timestamp)
     
 
     def ParseHexBytes(self, frame: str):

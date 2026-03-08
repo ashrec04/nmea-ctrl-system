@@ -84,6 +84,7 @@ async def ListenCanFrames(window: MainWindow) -> None:
 
 
 async def main() -> None:
+    core.data_logger.LogProgram("Program Start")
     app = QApplication(sys.argv)
     loop = QEventLoop(app) # initises the gui through asyncio
 
@@ -92,7 +93,7 @@ async def main() -> None:
     window = MainWindow()
     window.showFullScreen()
 
-    core.data_logger.LogProgram("Program Start")
+    core.data_logger.CleanLog()
 
     BuildCanusb()
     can_listener_task = loop.create_task(ListenCanFrames(window))
