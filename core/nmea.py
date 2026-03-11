@@ -5,6 +5,8 @@ from nmea2000.decoder import NMEA2000Decoder
 from nmea2000.utils import calculate_canbus_checksum
 
 import core.data_logger
+from control.output_signals import ControlSystem
+
 
 
 ''' Holds the NEMAMessage Class
