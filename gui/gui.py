@@ -52,6 +52,7 @@ class MainWindow(QMainWindow):
 
         self.data_widgets: dict[str, DataWidget] = {} # dictionary with pgn : DataWidget
         self.data_columns = 2
+        self.daytime_changed_callback = None
 
         self.graphGridLayout.setContentsMargins(12, 12, 12, 12)
         self.graphGridLayout.setHorizontalSpacing(12)
@@ -121,4 +122,8 @@ class MainWindow(QMainWindow):
             self.daytime = True
         elif self.nightRadioButton.isChecked():
             self.daytime = False
+
+        if self.daytime_changed_callback is not None:
+            self.daytime_changed_callback(self.daytime)
+
         print(f"daytime = {self.daytime}")

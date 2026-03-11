@@ -23,11 +23,16 @@ class NEMAMessage:
         #initise encoder and decoder
         self.encoder = NMEA2000Encoder()
         self.decoder = NMEA2000Decoder()
+        self.control_system = ControlSystem()
 
         self.data_recieved = False
 
 
     def ProcessCANFrame(self, window, frame) -> None:
+        if getattr(window, "daytime_changed_callback", None) is None: # get if time of day has changed
+            window.daytime_changed_callback = self.control_system.UpdateDaytime
+            self.control_system.UpdateDaytime(window.daytime)
+
         # Extract all bytes from canusb log line
         all_bytes = self.ParseHexBytes(frame) 
 
@@ -48,6 +53,7 @@ class NEMAMessage:
             return
 
         window.DataInput(decoded_msg.PGN, value)
+        self.UpdateControlState(decoded_msg)
         core.data_logger.LogData(pkt, decoded_msg.timestamp)
     
 
@@ -90,4 +96,10 @@ class NEMAMessage:
                 return fld.value
 
         return None
+
+    def UpdateControlState(self, decoded_msg) -> None:
+        for fld in decoded_msg.fields:
+            if fld.id == "sog":
+                self.control_system.UpdateSpeed(fld.value)
+                return
         
