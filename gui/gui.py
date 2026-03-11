@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QMainWindow
+from PyQt6.QtWidgets import QButtonGroup, QMainWindow
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 
@@ -64,6 +64,18 @@ class MainWindow(QMainWindow):
             Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
         )
 
+        #~ day night radio button grouping
+        self.daytime = True
+
+        self.day_night_group = QButtonGroup(self)
+        self.day_night_group.setExclusive(True)
+        self.day_night_group.addButton(self.dayRadioButton)
+        self.day_night_group.addButton(self.nightRadioButton)
+
+        self.dayRadioButton.toggled.connect(self.UpdateDaytime)
+        self.dayRadioButton.setChecked(self.daytime)
+        self.nightRadioButton.setChecked(not self.daytime)
+
 
     def DataInput(self, pgn, value):
         input_name = str(pgn)
@@ -103,3 +115,10 @@ class MainWindow(QMainWindow):
 
         data_widget = self.data_widgets[input_name]
         data_widget.UpdateData(value)
+
+    def UpdateDaytime(self, checked):
+        if checked:
+            self.daytime = True
+        elif self.nightRadioButton.isChecked():
+            self.daytime = False
+        print(f"daytime = {self.daytime}")

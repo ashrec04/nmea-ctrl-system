@@ -516,6 +516,7 @@
             <property name="font">
              <font>
               <family>Verdana</family>
+              <pointsize>14</pointsize>
              </font>
             </property>
             <property name="text">
@@ -528,6 +529,7 @@
             <property name="font">
              <font>
               <family>Verdana</family>
+              <pointsize>14</pointsize>
              </font>
             </property>
             <property name="text">
