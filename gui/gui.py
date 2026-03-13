@@ -18,7 +18,9 @@ MAX_GRAPH_POINTS = 50
 SENSOR_META = {
   "128267": {"title": "Water Depth", "axis": "Depth (m)", "unit": "Meters"},
   "129026": {"title": "Speed Over Ground", "axis": "Speed (Knots)", "unit": "Knots"},
-  "130306": {"title": "Wind Data", "axis": "Speed (Knots)", "unit": "Knots"}
+  "130306": {"title": "Wind Data", "axis": "Speed (Knots)", "unit": "Knots"},
+  "127505": {"title": "Bilge Level", "axis": "", "unit": "L"},
+  "127488": {"title": "Engine Status", "axis": "", "unit": "rpm"},
 }
 
 #~~
@@ -80,24 +82,27 @@ class MainWindow(QMainWindow):
 
     def DataInput(self, pgn, value):
         input_name = str(pgn)
-        if input_name not in self.graph_widgets:
+        if input_name not in self.data_widgets:
             
-            #~ Make new Graph Widget
-            graph_widget = GraphWidget(input_name)
-            self.graph_widgets[input_name] = graph_widget # save to dict
+            #~ Make new Graph Widget if pgn has axis
+            sensor_meta = SENSOR_META.get(input_name, {"title": f"PGN {pgn}", "axis": ""})
+            if input_name not in self.graph_widgets and sensor_meta.get("axis"):
+                graph_widget = GraphWidget(input_name, sensor_meta)
+                self.graph_widgets[input_name] = graph_widget # save to dict
 
-            graph_index = len(self.graph_widgets) - 1
-            row = graph_index // self.graph_columns
-            column = graph_index % self.graph_columns
+                graph_index = len(self.graph_widgets) - 1
+                row = graph_index // self.graph_columns
+                column = graph_index % self.graph_columns
 
-            self.graphGridLayout.addWidget(graph_widget.g, row, column)
-            self.graphGridLayout.setRowStretch(row, 1)
-            self.graphGridLayout.setColumnStretch(column, 1)
-            graph_widget.g.show()
+                self.graphGridLayout.addWidget(graph_widget.g, row, column)
+                self.graphGridLayout.setRowStretch(row, 1)
+                self.graphGridLayout.setColumnStretch(column, 1)
+                graph_widget.g.show()
+
             #~ 
 
             #~ Make new Data Widget
-            data_widget = DataWidget(input_name)
+            data_widget = DataWidget(input_name, sensor_meta)
             self.data_widgets[input_name] = data_widget # save to dict
 
             data_index = len(self.data_widgets) - 1
@@ -111,8 +116,9 @@ class MainWindow(QMainWindow):
             #~ 
 
         #~ add value to graph and data views
-        graph_widget = self.graph_widgets[input_name]
-        graph_widget.AddPoint(value)
+        graph_widget = self.graph_widgets.get(input_name)
+        if graph_widget is not None:
+            graph_widget.AddPoint(value)
 
         data_widget = self.data_widgets[input_name]
         data_widget.UpdateData(value)

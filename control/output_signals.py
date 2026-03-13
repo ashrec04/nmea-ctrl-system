@@ -23,11 +23,13 @@ class ControlSystem:
             "day_anchored": tuple(),
             "day_moving": tuple(),
             "night_anchored": ("ANCHOR",),
-            "night_moving": ("TRI", "STEAMING", "STERN"),
+            "night_moving_sail": ("TRI", "STEAMING", "STERN"),
+            "night_moving_engine": ("TRI", "DECK", "STERN"),
         }
 
         self.daytime = True
         self.is_moving = False
+        self.engine_running = False
         self.current_mode = None
         self._moving_samples = 0
         self._stationary_samples = 0
@@ -43,8 +45,7 @@ class ControlSystem:
         self.ApplyMode()
 
 
-    def UpdateSpeed(self, speed_knots: float | int | None) -> None:
-
+    def UpdateSpeed(self, speed_knots: float | int | None) -> None: # checks current vessel speed
         if speed_knots is None:
             return
 
@@ -72,12 +73,29 @@ class ControlSystem:
             self.ApplyMode()
 
 
+    def UpdateEngineRPM(self, rpm: float | int | None) -> None: # checks current engine rpm
+        if rpm is None:
+            return
+
+        engine_running = float(rpm) > 0
+
+        if self.engine_running == engine_running:
+            return
+
+        self.engine_running = engine_running
+        self.ApplyMode()
+
+
     def ApplyMode(self) -> None:
         # only sets lights if time is set to night
         if self.daytime:
             mode = "day_moving" if self.is_moving else "day_anchored"
+        elif not self.is_moving:
+            mode = "night_anchored"
+        elif self.engine_running:
+            mode = "night_moving_engine"
         else:
-            mode = "night_moving" if self.is_moving else "night_anchored"
+            mode = "night_moving_sail"
 
         if mode == self.current_mode:
             return
@@ -106,6 +124,7 @@ class ControlSystem:
             else:
                 led.off()
 
+
     #~ Debugging commands
     def AllOn(self):
         for led_name, led in self.led_dict.items():
@@ -114,3 +133,4 @@ class ControlSystem:
     def AllOff(self):
         for led_name, led in self.led_dict.items():
                 led.off()
+    #~

@@ -91,6 +91,23 @@ class NEMAMessage:
         return pkt
 
     def ExtractNumericValue(self, decoded_msg):
+        fields_by_id = {fld.id: fld.value for fld in decoded_msg.fields}
+
+        if decoded_msg.PGN == 127505:
+            level = fields_by_id.get("level")
+            capacity = fields_by_id.get("capacity")
+
+            if isinstance(level, (int, float)) and isinstance(capacity, (int, float)):
+                return (level / 100) * capacity
+
+            if isinstance(level, (int, float)):
+                return level
+
+        if decoded_msg.PGN == 127488:
+            speed = fields_by_id.get("speed")
+            if isinstance(speed, (int, float)):
+                return speed
+
         for fld in decoded_msg.fields:
             if fld.id =="depth" or fld.id =="windSpeed" or fld.id =="sog" :
                 return fld.value
@@ -101,5 +118,6 @@ class NEMAMessage:
         for fld in decoded_msg.fields:
             if fld.id == "sog":
                 self.control_system.UpdateSpeed(fld.value)
-                return
+            elif decoded_msg.PGN == 127488 and fld.id == "speed":
+                self.control_system.UpdateEngineRPM(fld.value)
         
