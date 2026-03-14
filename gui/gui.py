@@ -5,7 +5,7 @@ from PyQt6.QtGui import QPixmap
 from PyQt6 import uic
 
 import pyqtgraph as pg
-from gui.widget_presets import GraphWidget, DataWidget
+from gui.widget_presets import GraphWidget, DataWidget, AlarmWidget
 
 #~~ Global Constants
 WINDOW_PATH = 'gui/resources/mainwindow.ui'
@@ -54,6 +54,11 @@ class MainWindow(QMainWindow):
 
         self.data_widgets: dict[str, DataWidget] = {} # dictionary with pgn : DataWidget
         self.data_columns = 2
+
+        self.alarm_widgets: dict[str, GraphWidget] = {} # dictionary with pgn : AlarmWidget
+        self.alarm_columns = 1
+
+
         self.daytime_changed_callback = None
 
         self.graphGridLayout.setContentsMargins(12, 12, 12, 12)
@@ -64,6 +69,13 @@ class MainWindow(QMainWindow):
         self.dataGridLayout.setHorizontalSpacing(12)
         self.dataGridLayout.setVerticalSpacing(12)
         self.dataGridLayout.setAlignment(
+            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
+        )
+
+        self.alarmGridLayout.setContentsMargins(12, 12, 12, 12)
+        self.alarmGridLayout.setHorizontalSpacing(12)
+        self.alarmGridLayout.setVerticalSpacing(12)
+        self.alarmGridLayout.setAlignment(
             Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
         )
 
@@ -82,11 +94,12 @@ class MainWindow(QMainWindow):
 
     def DataInput(self, pgn, value):
         input_name = str(pgn)
+        sensor_meta = SENSOR_META.get(input_name, {"title": f"PGN {pgn}", "axis": "", "unit": ""})
+        has_graph = bool(sensor_meta.get("axis"))
+
         if input_name not in self.data_widgets:
-            
             #~ Make new Graph Widget if pgn has axis
-            sensor_meta = SENSOR_META.get(input_name, {"title": f"PGN {pgn}", "axis": ""})
-            if input_name not in self.graph_widgets and sensor_meta.get("axis"):
+            if input_name not in self.graph_widgets and has_graph:
                 graph_widget = GraphWidget(input_name, sensor_meta)
                 self.graph_widgets[input_name] = graph_widget # save to dict
 
@@ -98,7 +111,6 @@ class MainWindow(QMainWindow):
                 self.graphGridLayout.setRowStretch(row, 1)
                 self.graphGridLayout.setColumnStretch(column, 1)
                 graph_widget.g.show()
-
             #~ 
 
             #~ Make new Data Widget
@@ -115,7 +127,21 @@ class MainWindow(QMainWindow):
             data_widget.d.show()
             #~ 
 
-        #~ add value to graph and data views
+            #~ Make new Alarm Widget only for non-graph PGNs
+            if not has_graph:
+                alarm_widget = AlarmWidget(input_name, sensor_meta)
+                self.alarm_widgets[input_name] = alarm_widget # save to dict
+
+                alarm_index = len(self.alarm_widgets) - 1
+                row = alarm_index // self.alarm_columns
+                column = alarm_index % self.alarm_columns
+
+                self.alarmGridLayout.addWidget(alarm_widget.d, row, column)
+                alarm_widget.d.show()
+                #~ 
+
+
+        #~ add/update widgets in all views
         graph_widget = self.graph_widgets.get(input_name)
         if graph_widget is not None:
             graph_widget.AddPoint(value)
@@ -131,5 +157,3 @@ class MainWindow(QMainWindow):
 
         if self.daytime_changed_callback is not None:
             self.daytime_changed_callback(self.daytime)
-
-        print(f"daytime = {self.daytime}")
