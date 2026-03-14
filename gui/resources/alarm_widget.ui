@@ -101,17 +101,27 @@
           </widget>
          </item>
          <item>
-          <widget class="QSpinBox" name="alarmValSpinBox">
-           <property name="suffix">
-            <string>%</string>
-           </property>
-           <property name="prefix">
-            <string/>
-           </property>
-           <property name="maximum">
-            <number>100</number>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="font">
+              <font>
+               <family>Verdana</family>
+              </font>
+             </property>
+             <property name="text">
+              <string>0%</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSlider" name="horizontalSlider">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
