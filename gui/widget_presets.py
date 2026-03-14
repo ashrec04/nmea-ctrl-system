@@ -1,4 +1,6 @@
-from PyQt6 import QtWidgets
+from pathlib import Path
+
+from PyQt6 import QtWidgets, uic
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont
 
@@ -8,6 +10,8 @@ from datetime import datetime
 
 
 #~~ Global Constants
+ALARM_WIDGET_PATH = Path(__file__).resolve().parent / "resources" / "alarm_widget.ui"
+
 LIGHT_BLUE = "#E3F6FD"
 DARK_BLUE = "#0B76A0"
 TEAL_GREEN = "#1AA5A2"
@@ -143,50 +147,24 @@ class DataWidget:
         else:
             self.update_count += 1
 
+
+
 class AlarmWidget:
     def __init__(self, pgn, sensor_meta):
-
         self.pgn = pgn
         self.sensor_meta = sensor_meta
-        self.update_count = 0
-        self.update_interval = 5
 
-        self.d = QtWidgets.QWidget() # widget holding title & data label
-        d_layout = QtWidgets.QVBoxLayout(self.d)
+        self.d = uic.loadUi(ALARM_WIDGET_PATH)
 
-        self.d.setStyleSheet( # colour widget bg and make it look rounded
-            f"background-color: {DARK_BLUE};"
-            f"border: 1px solid {DARK_BLUE};"
-            "border-radius: 12px;"
-        )
+        self.d.setObjectName("alarmCard")
+        self.d.setStyleSheet("""
+            QWidget#alarmCard {
+                border: 2px solid #0B76A0;
+                border-radius: 12px;
+                background-color: #E3F6FD;
+            }
+        """)
 
-        self.d.setMaximumSize(QSize(400, 200))
-        self.d.setMinimumSize(QSize(200, 200))
-        self.d.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Preferred,
-            QtWidgets.QSizePolicy.Policy.Preferred
-        )
-
-        #declare labels & their text
-        title_label = QtWidgets.QLabel(f"{self.sensor_meta["title"]} Alarm ")
-        self.type_label = QtWidgets.QLabel("Trigger when:")
-        self.value_label = QtWidgets.QLabel("Than:")
-
-
-        #set alignment
-        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.type_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        #set font size & colour
-        title_label.setFont(QFont("Verdana", 18))
-        title_label.setStyleSheet(f"color: {LIGHT_BLUE};")
-        self.value_label.setFont(QFont("Verdana", 20, QFont.Weight.Bold))
-        self.value_label.setStyleSheet(f"color: {LIGHT_BLUE};")
-        self.type_label.setFont(QFont("Verdana", 20, QFont.Weight.Bold))
-        self.type_label.setStyleSheet(f"color: {LIGHT_BLUE};")
-
-        d_layout.addWidget(title_label)
-        d_layout.addWidget(self.value_label)
-        d_layout.addWidget(self.type_label)
-    
+        self.d.alarmNameLabel.setText(sensor_meta["title"])
+        self.d.alarmTypeComboBox.addItems(["Higher", "Lower"])
+        self.d.alarmStatusLabel.setText("inconfigured")

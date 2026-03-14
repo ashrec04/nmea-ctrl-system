@@ -128,7 +128,7 @@ class MainWindow(QMainWindow):
             #~ 
 
             #~ Make new Alarm Widget only for non-graph PGNs
-            if not has_graph:
+            if sensor_meta.get("title") == "Bilge Level":
                 alarm_widget = AlarmWidget(input_name, sensor_meta)
                 self.alarm_widgets[input_name] = alarm_widget # save to dict
 
