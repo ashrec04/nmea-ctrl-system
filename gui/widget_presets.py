@@ -154,6 +154,10 @@ class AlarmWidget:
         self.pgn = pgn
         self.sensor_meta = sensor_meta
 
+        self.edit_config_mode = False
+        self.config_saved_callback = None
+        self.alarm_acknowledged_callback = None
+
         self.d = uic.loadUi(ALARM_WIDGET_PATH)
 
         self.d.setObjectName("alarmCard")
@@ -168,3 +172,50 @@ class AlarmWidget:
         self.d.alarmNameLabel.setText(sensor_meta["title"])
         self.d.alarmTypeComboBox.addItems(["Higher", "Lower"])
         self.d.alarmStatusLabel.setText("inconfigured")
+
+        # make slider and combobox uneditable 
+        self.d.alarmTypeComboBox.setEnabled(False)
+        self.d.triggerHorizontalSlider.setEnabled(False)
+        self.d.editConfigPushButton.clicked.connect(self.ToggleConfigEditing)
+
+        # make ack alarm button greyed out by default
+        self.d.alarmAckButton.setEnabled(False)
+        self.d.alarmAckButton.clicked.connect(self.AcknowledgeAlarm)
+
+        # link slider to label to see its value
+        self.d.triggerHorizontalSlider.valueChanged.connect(self.UpdateSliderLabel)
+        self.UpdateSliderLabel(self.d.triggerHorizontalSlider.value())
+
+    def SetAlarmActive(self, active: bool):
+        self.d.alarmAckButton.setEnabled(active)
+        self.d.alarmStatusLabel.setText("Active" if active else "Inactive")
+
+    def AcknowledgeAlarm(self):
+        if self.alarm_acknowledged_callback is not None:
+            self.alarm_acknowledged_callback(self.pgn)
+
+    def ToggleConfigEditing(self):
+        if self.edit_config_mode == False: #if user has pressed "edit config"
+            self.edit_config_mode = True
+            self.d.editConfigPushButton.setText("Save")
+            self.d.alarmTypeComboBox.setEnabled(True)
+            self.d.triggerHorizontalSlider.setEnabled(True)
+
+        else: #if user has pressed "save"
+            self.edit_config_mode = False
+            self.d.editConfigPushButton.setText("Edit Config")
+            self.d.alarmTypeComboBox.setEnabled(False)
+            self.d.triggerHorizontalSlider.setEnabled(False)
+            if self.config_saved_callback is not None:
+                self.config_saved_callback(self.pgn, self.GetConfig())
+
+
+    def UpdateSliderLabel(self, value):
+        self.d.sliderValuelabel.setText(f"{value}%")
+
+
+    def GetConfig(self):
+        return {
+            "alarm_type": self.d.alarmTypeComboBox.currentText(),
+            "threshold": self.d.triggerHorizontalSlider.value(),
+        }

@@ -103,10 +103,11 @@
          <item>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <widget class="QLabel" name="label">
+            <widget class="QLabel" name="sliderValuelabel">
              <property name="font">
               <font>
                <family>Verdana</family>
+               <pointsize>16</pointsize>
               </font>
              </property>
              <property name="text">
@@ -115,7 +116,16 @@
             </widget>
            </item>
            <item>
-            <widget class="QSlider" name="horizontalSlider">
+           <widget class="QSlider" name="triggerHorizontalSlider">
+             <property name="minimum">
+              <number>0</number>
+             </property>
+             <property name="maximum">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>0</number>
+             </property>
              <property name="orientation">
               <enum>Qt::Orientation::Horizontal</enum>
              </property>
@@ -146,7 +156,7 @@
         </spacer>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="editConfigPushButton">
          <property name="font">
           <font>
            <family>Verdana</family>
@@ -205,7 +215,7 @@
         </font>
        </property>
        <property name="text">
-        <string>None</string>
+        <string>Inactive</string>
        </property>
       </widget>
      </item>

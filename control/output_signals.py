@@ -34,6 +34,11 @@ class ControlSystem:
         self._moving_samples = 0
         self._stationary_samples = 0
 
+        self.alarm_configs = {}
+        self.acknowledged_alarms = {}
+        self.current_bilge_level = None
+        self.alarm_state_changed_callback = None
+
         self.ApplyMode()
 
 
@@ -124,6 +129,87 @@ class ControlSystem:
             else:
                 led.off()
 
+    def UpdateAlarmConfig(self, pgn: str | int, config: dict) -> None:
+                # fetch's alarm config after save button is pressed in gui
+        pgn_key = str(pgn)
+        self.alarm_configs[pgn_key] = config
+        self.acknowledged_alarms[pgn_key] = False
+        print(f"Config Updated {self.alarm_configs}")
+        self.CheckAlarm(pgn)
+
+    def GetAlarmConfig(self, pgn: str | int) -> dict | None:
+        return self.alarm_configs.get(str(pgn))
+        print(f"Config Got {self.alarm_configs}")
+
+    def UpdateBilgeLevel(self, level: float | int | None) -> None:
+        #get current bilge lvl read
+        if level is None:
+            return
+
+        self.current_bilge_level = float(level)
+        self.CheckAlarm("127505")
+
+    def AcknowledgeAlarm(self, pgn: str | int = "127505") -> None:
+        # turns off alarm when ack button pressed
+        pgn_key = str(pgn)
+
+        if self.CheckAlarm(pgn):
+            self.acknowledged_alarms[pgn_key] = True
+            self.led_dict["ALARM"].off()
+            if self.alarm_state_changed_callback is not None:
+                self.alarm_state_changed_callback(pgn_key, False)
+
+    def CheckAlarm(self, pgn: str | int = "127505") -> bool:
+        #check status of bilge alarm
+        pgn_key = str(pgn)
+        config = self.GetAlarmConfig(pgn)
+
+        #if bilge lvl has gone below trigger
+        if config is None or self.current_bilge_level is None:
+            self.led_dict["ALARM"].off()
+            if self.alarm_state_changed_callback is not None:
+                self.alarm_state_changed_callback(pgn_key, False)
+            return False
+
+        alarm_type = config.get("alarm_type")
+        threshold = config.get("threshold")
+
+
+        if threshold is None:
+            self.led_dict["ALARM"].off()
+            if self.alarm_state_changed_callback is not None:
+                self.alarm_state_changed_callback(pgn_key, False)
+            return False
+
+        threshold_value = float(threshold)
+
+        # get the alarm status based on its type
+        if alarm_type == "Higher":
+            condition_active = self.current_bilge_level >= threshold_value
+        elif alarm_type == "Lower":
+            condition_active = self.current_bilge_level <= threshold_value
+        else:
+            self.led_dict["ALARM"].off()
+            if self.alarm_state_changed_callback is not None:
+                self.alarm_state_changed_callback(pgn_key, False)
+            return False
+
+        if not condition_active:
+            self.acknowledged_alarms[pgn_key] = False
+            alarm_active = False
+        else:
+            alarm_active = not self.acknowledged_alarms.get(pgn_key, False)
+
+        if alarm_active:
+            self.led_dict["ALARM"].on()
+        else:
+            self.led_dict["ALARM"].off()
+
+        if self.alarm_state_changed_callback is not None:
+            self.alarm_state_changed_callback(pgn_key, alarm_active)
+
+        return alarm_active
+
 
     #~ Debugging commands
     def AllOn(self):
@@ -132,5 +218,5 @@ class ControlSystem:
 
     def AllOff(self):
         for led_name, led in self.led_dict.items():
-                led.off()
+                led.off()         
     #~

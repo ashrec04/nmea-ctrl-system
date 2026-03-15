@@ -60,6 +60,9 @@ class MainWindow(QMainWindow):
 
 
         self.daytime_changed_callback = None
+        self.alarm_config_changed_callback = None
+        self.alarm_acknowledged_callback = None
+        
 
         self.graphGridLayout.setContentsMargins(12, 12, 12, 12)
         self.graphGridLayout.setHorizontalSpacing(12)
@@ -130,6 +133,8 @@ class MainWindow(QMainWindow):
             #~ Make new Alarm Widget only for non-graph PGNs
             if sensor_meta.get("title") == "Bilge Level":
                 alarm_widget = AlarmWidget(input_name, sensor_meta)
+                alarm_widget.config_saved_callback = self.HandleAlarmConfigChanged
+                alarm_widget.alarm_acknowledged_callback = self.HandleAlarmAcknowledged
                 self.alarm_widgets[input_name] = alarm_widget # save to dict
 
                 alarm_index = len(self.alarm_widgets) - 1
@@ -157,3 +162,24 @@ class MainWindow(QMainWindow):
 
         if self.daytime_changed_callback is not None:
             self.daytime_changed_callback(self.daytime)
+
+    def HandleAlarmConfigChanged(self, pgn, config):
+        if self.alarm_config_changed_callback is not None:
+            self.alarm_config_changed_callback(pgn, config)
+
+    def HandleAlarmAcknowledged(self, pgn):
+        if self.alarm_acknowledged_callback is not None:
+            self.alarm_acknowledged_callback(pgn)
+
+    def UpdateAlarmState(self, pgn, active):
+        alarm_widget = self.alarm_widgets.get(str(pgn))
+        if alarm_widget is None:
+            return
+
+        alarm_widget.SetAlarmActive(active)
+
+    def GetAlarmConfig(self, pgn):
+        alarm_widget = self.alarm_widgets.get(str(pgn))
+        if alarm_widget is None:
+            return None
+        return alarm_widget.GetConfig()

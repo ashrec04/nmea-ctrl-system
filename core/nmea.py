@@ -1,3 +1,5 @@
+from collections import Counter
+import time
 from nmea2000.encoder import NMEA2000Encoder, NMEA2000Message, NMEA2000Field
 import re
 
@@ -18,17 +20,31 @@ from control.output_signals import ControlSystem
 '''
 
 class NEMAMessage:
+    DIAGNOSTIC_INTERVAL_SECONDS = 5
+    TRACKED_PGNS = (128267, 129026, 130306, 127505, 127488)
 
-    def __init__ (self):
+    def __init__ (self, control_system=None):
         #initise encoder and decoder
         self.encoder = NMEA2000Encoder()
         self.decoder = NMEA2000Decoder()
-        self.control_system = ControlSystem()
+        self.control_system = control_system or ControlSystem()
 
         self.data_recieved = False
 
+        #debugging system
+        self._diagnostic_started_at = time.monotonic()
+        self._diagnostic_last_logged_at = self._diagnostic_started_at
+        self._frames_seen = 0
+        self._parse_failures = 0
+        self._decode_failures = 0
+        self._extract_failures = 0
+        self._decoded_pgn_counts = Counter()
+        self._delivered_pgn_counts = Counter()
+
 
     def ProcessCANFrame(self, window, frame) -> None:
+        self._frames_seen += 1
+
         if getattr(window, "daytime_changed_callback", None) is None: # get if time of day has changed
             window.daytime_changed_callback = self.control_system.UpdateDaytime
             self.control_system.UpdateDaytime(window.daytime)
@@ -37,24 +53,35 @@ class NEMAMessage:
         all_bytes = self.ParseHexBytes(frame) 
 
         if not all_bytes:
+            self._parse_failures += 1
+            self.LogDiagnosticsIfDue()
             return None, []
         
         pkt = self.DecodeMessage(all_bytes)
         if pkt is None:
+            self.LogDiagnosticsIfDue()
             return
 
         decoded_msg = self.decoder.decode_usb(pkt)
 
         if decoded_msg is None:
+            self._decode_failures += 1
+            self.LogDiagnosticsIfDue()
             return
+
+        self._decoded_pgn_counts[decoded_msg.PGN] += 1
 
         value = self.ExtractNumericValue(decoded_msg)
         if value is None:
+            self._extract_failures += 1
+            self.LogDiagnosticsIfDue()
             return
 
+        self._delivered_pgn_counts[decoded_msg.PGN] += 1
         window.DataInput(decoded_msg.PGN, value)
         self.UpdateControlState(decoded_msg)
         core.data_logger.LogData(pkt, decoded_msg.timestamp)
+        self.LogDiagnosticsIfDue()
     
 
     def ParseHexBytes(self, frame: str):
@@ -118,6 +145,35 @@ class NEMAMessage:
         for fld in decoded_msg.fields:
             if fld.id == "sog":
                 self.control_system.UpdateSpeed(fld.value)
+            elif decoded_msg.PGN == 127505 and fld.id == "level":
+                self.control_system.UpdateBilgeLevel(fld.value)
             elif decoded_msg.PGN == 127488 and fld.id == "speed":
                 self.control_system.UpdateEngineRPM(fld.value)
+
+    def LogDiagnosticsIfDue(self) -> None:
+        now = time.monotonic()
+        if now - self._diagnostic_last_logged_at < self.DIAGNOSTIC_INTERVAL_SECONDS:
+            return
+
+        elapsed_seconds = max(now - self._diagnostic_started_at, 0.001)
+        decoded_summary = ", ".join(
+            f"{pgn}:{self._decoded_pgn_counts.get(pgn, 0)}"
+            for pgn in self.TRACKED_PGNS
+        )
+        delivered_summary = ", ".join(
+            f"{pgn}:{self._delivered_pgn_counts.get(pgn, 0)}"
+            for pgn in self.TRACKED_PGNS
+        )
+
+        core.data_logger.LogProgram(
+            "NMEA diagnostics "
+            f"elapsed={elapsed_seconds:.1f}s "
+            f"frames_seen={self._frames_seen} "
+            f"parse_failures={self._parse_failures} "
+            f"decode_failures={self._decode_failures} "
+            f"extract_failures={self._extract_failures} "
+            f"decoded_pgns=[{decoded_summary}] "
+            f"delivered_pgns=[{delivered_summary}]"
+        )
+        self._diagnostic_last_logged_at = now
         
