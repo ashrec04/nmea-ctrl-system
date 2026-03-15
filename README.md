@@ -1,4 +1,4 @@
-# NMEA2000 Control System 
+# NMEA2000 Control System Demo
 Built for use on a Raspberry Pi. Receives data via a [Waveshare USB-CAN-A Bus](https://www.waveshare.com/wiki/USB-CAN-A). recieved messages are decoded and displayed on a Touchscreen interactable GUI. Data is also analysed by a control system which outputs data to GPIO Pins in relation to recieved NMEA2000 messages.
 
 ## Key Libraries Used
