@@ -1,4 +1,6 @@
-from PyQt6 import QtWidgets
+from pathlib import Path
+
+from PyQt6 import QtWidgets, uic
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont
 
@@ -8,6 +10,8 @@ from datetime import datetime
 
 
 #~~ Global Constants
+ALARM_WIDGET_PATH = Path(__file__).resolve().parent / "resources" / "alarm_widget.ui"
+
 LIGHT_BLUE = "#E3F6FD"
 DARK_BLUE = "#0B76A0"
 TEAL_GREEN = "#1AA5A2"
@@ -15,7 +19,9 @@ MAX_GRAPH_POINTS = 50
 SENSOR_META = {
   "128267": {"title": "Water Depth", "axis": "Depth (m)", "unit": "Meters"},
   "129026": {"title": "Speed Over Ground", "axis": "Speed (Knots)", "unit": "Knots"},
-  "130306": {"title": "Wind Data", "axis": "Speed (Knots)", "unit": "Knots"}
+  "130306": {"title": "Wind Data", "axis": "Speed (Knots)", "unit": "Knots"},
+  "127505": {"title": "Bilge Level", "axis": "", "unit": "L"},
+  "127488": {"title": "Engine Status", "axis": "", "unit": "rpm"},
 }
 #~~
 
@@ -31,10 +37,10 @@ class MinuteAxisItem(pg.AxisItem):
 
 
 class GraphWidget:
-    def __init__(self, pgn):
+    def __init__(self, pgn, sensor_meta):
 
         self.pgn = pgn
-        graph_meta = SENSOR_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value"})
+        self.graph_meta = sensor_meta
 
         self.pen = pg.mkPen(color=DARK_BLUE, width=3)
         self.title_style = {"color": TEAL_GREEN, "font-size": "18px"}
@@ -53,8 +59,8 @@ class GraphWidget:
             QtWidgets.QSizePolicy.Policy.Expanding,
         )
         self.g.setBackground(LIGHT_BLUE)
-        self.g.setTitle(graph_meta["title"], **self.title_style) # graph title
-        self.g.setLabel("left", graph_meta["axis"], **self.axis_style) # y axis name
+        self.g.setTitle(self.graph_meta["title"], **self.title_style) # graph title
+        self.g.setLabel("left", self.graph_meta["axis"], **self.axis_style) # y axis name
         self.g.setLabel("bottom", "Time", **self.axis_style) #x axis name
         self.g.getAxis("bottom").enableAutoSIPrefix(False)
         self.g.showGrid(x=True, y=True)
@@ -85,10 +91,10 @@ class GraphWidget:
 
 
 class DataWidget:
-    def __init__(self, pgn):
+    def __init__(self, pgn, sensor_meta):
 
         self.pgn = pgn
-        self.sensor_meta = SENSOR_META.get(pgn, {"title": f"PGN {pgn}", "axis": "Value", "unit": "Value"})
+        self.sensor_meta = sensor_meta
         self.update_count = 0
         self.update_interval = 5
 
@@ -134,7 +140,82 @@ class DataWidget:
                 numeric_value = float(value)
             except (TypeError, ValueError):
                 return
-            self.value_label.setText(f"{round(numeric_value, 2)} {self.sensor_meta["unit"]}") #show val on screen rounded to 1dp
+            self.value_label.setText(
+                f"{round(numeric_value, 2)} {self.sensor_meta['unit']}"
+            ) #show val on screen rounded to 1dp
         
         else:
             self.update_count += 1
+
+
+
+class AlarmWidget:
+    def __init__(self, pgn, sensor_meta):
+        self.pgn = pgn
+        self.sensor_meta = sensor_meta
+
+        self.edit_config_mode = False
+        self.config_saved_callback = None
+        self.alarm_acknowledged_callback = None
+
+        self.d = uic.loadUi(ALARM_WIDGET_PATH)
+
+        self.d.setObjectName("alarmCard")
+        self.d.setStyleSheet("""
+            QWidget#alarmCard {
+                border: 2px solid #0B76A0;
+                border-radius: 12px;
+                background-color: #E3F6FD;
+            }
+        """)
+
+        self.d.alarmNameLabel.setText(sensor_meta["title"])
+        self.d.alarmTypeComboBox.addItems(["Higher", "Lower"])
+        self.d.alarmStatusLabel.setText("inconfigured")
+
+        # make slider and combobox uneditable 
+        self.d.alarmTypeComboBox.setEnabled(False)
+        self.d.triggerHorizontalSlider.setEnabled(False)
+        self.d.editConfigPushButton.clicked.connect(self.ToggleConfigEditing)
+
+        # make ack alarm button greyed out by default
+        self.d.alarmAckButton.setEnabled(False)
+        self.d.alarmAckButton.clicked.connect(self.AcknowledgeAlarm)
+
+        # link slider to label to see its value
+        self.d.triggerHorizontalSlider.valueChanged.connect(self.UpdateSliderLabel)
+        self.UpdateSliderLabel(self.d.triggerHorizontalSlider.value())
+
+    def SetAlarmActive(self, active: bool):
+        self.d.alarmAckButton.setEnabled(active)
+        self.d.alarmStatusLabel.setText("Active" if active else "Inactive")
+
+    def AcknowledgeAlarm(self):
+        if self.alarm_acknowledged_callback is not None:
+            self.alarm_acknowledged_callback(self.pgn)
+
+    def ToggleConfigEditing(self):
+        if self.edit_config_mode == False: #if user has pressed "edit config"
+            self.edit_config_mode = True
+            self.d.editConfigPushButton.setText("Save")
+            self.d.alarmTypeComboBox.setEnabled(True)
+            self.d.triggerHorizontalSlider.setEnabled(True)
+
+        else: #if user has pressed "save"
+            self.edit_config_mode = False
+            self.d.editConfigPushButton.setText("Edit Config")
+            self.d.alarmTypeComboBox.setEnabled(False)
+            self.d.triggerHorizontalSlider.setEnabled(False)
+            if self.config_saved_callback is not None:
+                self.config_saved_callback(self.pgn, self.GetConfig())
+
+
+    def UpdateSliderLabel(self, value):
+        self.d.sliderValuelabel.setText(f"{value}%")
+
+
+    def GetConfig(self):
+        return {
+            "alarm_type": self.d.alarmTypeComboBox.currentText(),
+            "threshold": self.d.triggerHorizontalSlider.value(),
+        }

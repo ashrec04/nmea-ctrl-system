@@ -10,6 +10,7 @@ from qasync import QEventLoop
 
 from core.nmea import NEMAMessage
 import core.data_logger
+from control.output_signals import ControlSystem
 from gui.gui import MainWindow
 
 
@@ -34,8 +35,8 @@ async def DrainStderr(proc: asyncio.subprocess.Process) -> None:
         print(f"canusb stderr: {line.decode(errors='replace').rstrip()}")
 
 
-async def ListenCanFrames(window: MainWindow) -> None:
-    n2k = NEMAMessage()
+async def ListenCanFrames(window: MainWindow, control_system: ControlSystem) -> None:
+    n2k = NEMAMessage(control_system)
 
     # run the canusb program command
     # ~/USB-CAN-A $ ./canusb -d /dev/ttyUSB0 -s 125000
@@ -91,12 +92,18 @@ async def main() -> None:
     asyncio.set_event_loop(loop)
 
     window = MainWindow()
+    #initiise ctrl system and link to gui widget vals
+    control_system = ControlSystem()
+    window.daytime_changed_callback = control_system.UpdateDaytime
+    window.alarm_config_changed_callback = control_system.UpdateAlarmConfig
+    window.alarm_acknowledged_callback = control_system.AcknowledgeAlarm
+    control_system.alarm_state_changed_callback = window.UpdateAlarmState
     window.showFullScreen()
 
     core.data_logger.CleanLog()
 
     BuildCanusb()
-    can_listener_task = loop.create_task(ListenCanFrames(window))
+    can_listener_task = loop.create_task(ListenCanFrames(window, control_system))
     app.aboutToQuit.connect(loop.stop)
 
     with loop:

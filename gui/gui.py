@@ -1,11 +1,11 @@
-from PyQt6.QtWidgets import QMainWindow
+from PyQt6.QtWidgets import QButtonGroup, QMainWindow
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 
 from PyQt6 import uic
 
 import pyqtgraph as pg
-from gui.widget_presets import GraphWidget, DataWidget
+from gui.widget_presets import GraphWidget, DataWidget, AlarmWidget
 
 #~~ Global Constants
 WINDOW_PATH = 'gui/resources/mainwindow.ui'
@@ -18,7 +18,9 @@ MAX_GRAPH_POINTS = 50
 SENSOR_META = {
   "128267": {"title": "Water Depth", "axis": "Depth (m)", "unit": "Meters"},
   "129026": {"title": "Speed Over Ground", "axis": "Speed (Knots)", "unit": "Knots"},
-  "130306": {"title": "Wind Data", "axis": "Speed (Knots)", "unit": "Knots"}
+  "130306": {"title": "Wind Data", "axis": "Speed (Knots)", "unit": "Knots"},
+  "127505": {"title": "Bilge Level", "axis": "", "unit": "L"},
+  "127488": {"title": "Engine Status", "axis": "", "unit": "rpm"},
 }
 
 #~~
@@ -53,6 +55,15 @@ class MainWindow(QMainWindow):
         self.data_widgets: dict[str, DataWidget] = {} # dictionary with pgn : DataWidget
         self.data_columns = 2
 
+        self.alarm_widgets: dict[str, GraphWidget] = {} # dictionary with pgn : AlarmWidget
+        self.alarm_columns = 1
+
+
+        self.daytime_changed_callback = None
+        self.alarm_config_changed_callback = None
+        self.alarm_acknowledged_callback = None
+        
+
         self.graphGridLayout.setContentsMargins(12, 12, 12, 12)
         self.graphGridLayout.setHorizontalSpacing(12)
         self.graphGridLayout.setVerticalSpacing(12)
@@ -64,27 +75,49 @@ class MainWindow(QMainWindow):
             Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
         )
 
+        self.alarmGridLayout.setContentsMargins(12, 12, 12, 12)
+        self.alarmGridLayout.setHorizontalSpacing(12)
+        self.alarmGridLayout.setVerticalSpacing(12)
+        self.alarmGridLayout.setAlignment(
+            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft
+        )
+
+        #~ day night radio button grouping
+        self.daytime = True
+
+        self.day_night_group = QButtonGroup(self)
+        self.day_night_group.setExclusive(True)
+        self.day_night_group.addButton(self.dayRadioButton)
+        self.day_night_group.addButton(self.nightRadioButton)
+
+        self.dayRadioButton.toggled.connect(self.UpdateDaytime)
+        self.dayRadioButton.setChecked(self.daytime)
+        self.nightRadioButton.setChecked(not self.daytime)
+
 
     def DataInput(self, pgn, value):
         input_name = str(pgn)
-        if input_name not in self.graph_widgets:
-            
-            #~ Make new Graph Widget
-            graph_widget = GraphWidget(input_name)
-            self.graph_widgets[input_name] = graph_widget # save to dict
+        sensor_meta = SENSOR_META.get(input_name, {"title": f"PGN {pgn}", "axis": "", "unit": ""})
+        has_graph = bool(sensor_meta.get("axis"))
 
-            graph_index = len(self.graph_widgets) - 1
-            row = graph_index // self.graph_columns
-            column = graph_index % self.graph_columns
+        if input_name not in self.data_widgets:
+            #~ Make new Graph Widget if pgn has axis
+            if input_name not in self.graph_widgets and has_graph:
+                graph_widget = GraphWidget(input_name, sensor_meta)
+                self.graph_widgets[input_name] = graph_widget # save to dict
 
-            self.graphGridLayout.addWidget(graph_widget.g, row, column)
-            self.graphGridLayout.setRowStretch(row, 1)
-            self.graphGridLayout.setColumnStretch(column, 1)
-            graph_widget.g.show()
+                graph_index = len(self.graph_widgets) - 1
+                row = graph_index // self.graph_columns
+                column = graph_index % self.graph_columns
+
+                self.graphGridLayout.addWidget(graph_widget.g, row, column)
+                self.graphGridLayout.setRowStretch(row, 1)
+                self.graphGridLayout.setColumnStretch(column, 1)
+                graph_widget.g.show()
             #~ 
 
             #~ Make new Data Widget
-            data_widget = DataWidget(input_name)
+            data_widget = DataWidget(input_name, sensor_meta)
             self.data_widgets[input_name] = data_widget # save to dict
 
             data_index = len(self.data_widgets) - 1
@@ -97,9 +130,56 @@ class MainWindow(QMainWindow):
             data_widget.d.show()
             #~ 
 
-        #~ add value to graph and data views
-        graph_widget = self.graph_widgets[input_name]
-        graph_widget.AddPoint(value)
+            #~ Make new Alarm Widget only for non-graph PGNs
+            if sensor_meta.get("title") == "Bilge Level":
+                alarm_widget = AlarmWidget(input_name, sensor_meta)
+                alarm_widget.config_saved_callback = self.HandleAlarmConfigChanged
+                alarm_widget.alarm_acknowledged_callback = self.HandleAlarmAcknowledged
+                self.alarm_widgets[input_name] = alarm_widget # save to dict
+
+                alarm_index = len(self.alarm_widgets) - 1
+                row = alarm_index // self.alarm_columns
+                column = alarm_index % self.alarm_columns
+
+                self.alarmGridLayout.addWidget(alarm_widget.d, row, column)
+                alarm_widget.d.show()
+                #~ 
+
+
+        #~ add/update widgets in all views
+        graph_widget = self.graph_widgets.get(input_name)
+        if graph_widget is not None:
+            graph_widget.AddPoint(value)
 
         data_widget = self.data_widgets[input_name]
         data_widget.UpdateData(value)
+
+    def UpdateDaytime(self, checked):
+        if checked:
+            self.daytime = True
+        elif self.nightRadioButton.isChecked():
+            self.daytime = False
+
+        if self.daytime_changed_callback is not None:
+            self.daytime_changed_callback(self.daytime)
+
+    def HandleAlarmConfigChanged(self, pgn, config):
+        if self.alarm_config_changed_callback is not None:
+            self.alarm_config_changed_callback(pgn, config)
+
+    def HandleAlarmAcknowledged(self, pgn):
+        if self.alarm_acknowledged_callback is not None:
+            self.alarm_acknowledged_callback(pgn)
+
+    def UpdateAlarmState(self, pgn, active):
+        alarm_widget = self.alarm_widgets.get(str(pgn))
+        if alarm_widget is None:
+            return
+
+        alarm_widget.SetAlarmActive(active)
+
+    def GetAlarmConfig(self, pgn):
+        alarm_widget = self.alarm_widgets.get(str(pgn))
+        if alarm_widget is None:
+            return None
+        return alarm_widget.GetConfig()
